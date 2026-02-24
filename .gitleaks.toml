@@ -1,0 +1,11 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+
+[extend]
+# Extend the default gitleaks config
+useDefault = true
+
+# Test fixtures contain scraped HTML from public websites.
+# Any "tokens" are public Cloudflare analytics beacons, not secrets.
+[allowlist]
+paths = ['''tests/fixtures/''']
