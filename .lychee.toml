@@ -13,6 +13,10 @@ exclude = [
     '^mailto:',
     # Localhost URLs (e.g. docs preview in CONTRIBUTING.md)
     '^http://localhost',
+    # GitHub repo doesn't exist yet — remove these excludes after first push
+    '^https://github\.com/detailobsessed/spm-search-mcp',
+    '^https://detailobsessed\.github\.io/spm-search-mcp',
+    '^https://docs\.github\.com/en/repositories',
 ]
 
 # Exclude local/private addresses
