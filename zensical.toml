@@ -1,9 +1,9 @@
 [project]
 site_name = "spm-search-mcp"
 site_description = "MCP server to help your coding agent search the Swift package index"
-site_url = "https://detailobsessed.github.io/spm-search-mcp"
-repo_url = "https://github.com/detailobsessed/spm-search-mcp"
-repo_name = "detailobsessed/spm-search-mcp"
+site_url = "https://detailobsessed.github.io/spm-search"
+repo_url = "https://github.com/detailobsessed/spm-search"
+repo_name = "detailobsessed/spm-search"
 site_dir = "site"
 copyright = "Copyright &copy; 2026 Ismar Iljazovic"
 edit_uri = "edit/main/docs/"

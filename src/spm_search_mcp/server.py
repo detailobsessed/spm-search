@@ -27,7 +27,7 @@ mcp = FastMCP(
     name="Swift Package Index",
     instructions=(
         "Search the Swift Package Index (swiftpackageindex.com) for Swift packages. "
-        "Use search_packages to find packages by keyword, author, stars, platform, license, or product type. "
+        "Use search_swift_packages to find packages by keyword, author, stars, platform, license, or product type. "
         "Use get_package_readme to fetch a package's README after finding it in search results. "
         "No API key required."
     ),
