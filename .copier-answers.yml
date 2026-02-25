@@ -19,4 +19,3 @@ repository_provider: github.com
 use_blacksmith_runners: true
 use_ci: true
 use_semantic_release: true
-
