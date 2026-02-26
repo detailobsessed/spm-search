@@ -237,6 +237,45 @@ def _has_more_pages(html: str) -> bool:
     return False
 
 
+def _error_response(query: str, page: int, search_url: str, *, next_step: str) -> SearchResponse:
+    """Build a SearchResponse for error cases (ERROR_CLASSIFICATION pattern).
+
+    Returns a valid SearchResponse with zero results and an actionable next_step,
+    so the agent always gets structured data — never a raw exception.
+    """
+    return SearchResponse(
+        query=query,
+        results=[],
+        result_count=0,
+        page=page,
+        has_more=False,
+        spi_search_url=search_url,
+        next_step=next_step,
+    )
+
+
+def _classify_http_error(status_code: int) -> str:
+    """Classify an HTTP status code into an agent-friendly recovery message.
+
+    LEARN: The RECOVERY_GUIDE pattern means every error answers three questions:
+    (1) what went wrong, (2) why, (3) how to fix it. We prefix with RETRYABLE
+    or PERMANENT so the agent knows whether to retry or change its approach.
+    """
+    # LEARN: Match statement (Python 3.10+) is cleaner than if/elif chains for
+    # mapping discrete values to outcomes.
+    match status_code:
+        case 429:
+            return "RETRYABLE: Rate limited by Swift Package Index. Wait 60 seconds, then retry the same search."
+        case 403:
+            return "PERMANENT: Access denied by Swift Package Index (403). The site may be blocking automated requests."
+        case 404:
+            return "PERMANENT: Search endpoint not found (404). SPI may have changed their URL structure."
+        case s if 500 <= s < 600:  # noqa: PLR2004
+            return f"RETRYABLE: Swift Package Index returned server error ({s}). The site may be under maintenance. Retry in 30 seconds."
+        case _:
+            return f"PERMANENT: Unexpected HTTP {status_code} from Swift Package Index. Check {SPI_BASE_URL} manually."
+
+
 async def search_packages(  # noqa: PLR0913
     query: str = "",
     *,
@@ -278,9 +317,34 @@ async def search_packages(  # noqa: PLR0913
 
     search_url = _build_search_url(query_string, page)
 
-    async with httpx.AsyncClient(headers=HTTP_HEADERS, timeout=15.0, follow_redirects=True) as client:
-        response = await client.get(search_url)
-        response.raise_for_status()
+    # LEARN: ERROR_CLASSIFICATION pattern — we catch specific httpx exceptions and return
+    # agent-friendly SearchResponse objects instead of letting raw tracebacks propagate.
+    # This means the agent ALWAYS gets structured data back, even on failure.
+    try:
+        async with httpx.AsyncClient(headers=HTTP_HEADERS, timeout=15.0, follow_redirects=True) as client:
+            response = await client.get(search_url)
+            response.raise_for_status()
+    except httpx.TimeoutException:
+        return _error_response(
+            query_string,
+            page,
+            search_url,
+            next_step="RETRYABLE: Swift Package Index took too long to respond. Retry the same search — transient timeouts are common.",
+        )
+    except httpx.ConnectError:
+        return _error_response(
+            query_string,
+            page,
+            search_url,
+            next_step="RETRYABLE: Could not connect to swiftpackageindex.com. The site may be temporarily down. Retry in 30 seconds.",
+        )
+    except httpx.HTTPStatusError as exc:
+        return _error_response(
+            query_string,
+            page,
+            search_url,
+            next_step=_classify_http_error(exc.response.status_code),
+        )
 
     html = response.text
     results = parse_search_results(html)
@@ -307,6 +371,14 @@ async def search_packages(  # noqa: PLR0913
     )
 
 
+def _truncate_readme(content: str, max_length: int) -> str:
+    """Truncate README content if it exceeds max_length (TOKEN_EFFICIENT_RESPONSE pattern)."""
+    if max_length > 0 and len(content) > max_length:
+        truncation_msg = f"\n\n... [truncated — full README is {len(content)} chars. Pass max_length=0 for full.]"
+        return content[:max_length] + truncation_msg
+    return content
+
+
 async def fetch_readme(owner: str, repo: str, *, max_length: int = 4000) -> str:
     """Fetch a package's README from GitHub raw content.
 
@@ -316,27 +388,24 @@ async def fetch_readme(owner: str, repo: str, *, max_length: int = 4000) -> str:
     # LEARN: raw.githubusercontent.com serves raw file content without GitHub's HTML wrapper.
     # We try common README filenames in order of likelihood.
     filenames = ["README.md", "README.rst", "README.txt", "README", "readme.md"]
+    branches = ["main", "master"]
 
-    async with httpx.AsyncClient(headers=HTTP_HEADERS, timeout=15.0, follow_redirects=True) as client:
-        for filename in filenames:
-            url = f"https://raw.githubusercontent.com/{owner}/{repo}/main/{filename}"
-            response = await client.get(url)
-            if response.status_code == 200:  # noqa: PLR2004
-                content = response.text
-                if max_length > 0 and len(content) > max_length:
-                    truncation_msg = f"\n\n... [truncated — full README is {len(content)} chars. Pass max_length=0 for full.]"
-                    return content[:max_length] + truncation_msg
-                return content
+    try:
+        async with httpx.AsyncClient(headers=HTTP_HEADERS, timeout=15.0, follow_redirects=True) as client:
+            for branch in branches:
+                for filename in filenames:
+                    url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{filename}"
+                    response = await client.get(url)
+                    if response.status_code == 200:  # noqa: PLR2004
+                        return _truncate_readme(response.text, max_length)
+                    if response.status_code == 429:  # noqa: PLR2004
+                        return f"RETRYABLE: GitHub rate limited the request for {owner}/{repo}. Wait 60 seconds, then retry."
+    except httpx.TimeoutException:
+        return f"RETRYABLE: GitHub took too long to respond for {owner}/{repo}. Retry the same request."
+    except httpx.ConnectError:
+        return f"RETRYABLE: Could not connect to GitHub for {owner}/{repo}. Retry in 30 seconds."
 
-        # Try default branch 'master' as fallback
-        for filename in filenames[:2]:
-            url = f"https://raw.githubusercontent.com/{owner}/{repo}/master/{filename}"
-            response = await client.get(url)
-            if response.status_code == 200:  # noqa: PLR2004
-                content = response.text
-                if max_length > 0 and len(content) > max_length:
-                    truncation_msg = f"\n\n... [truncated — full README is {len(content)} chars. Pass max_length=0 for full.]"
-                    return content[:max_length] + truncation_msg
-                return content
-
-    return f"README not found for {owner}/{repo}. The repository may be private, archived, or use a non-standard default branch."
+    return (
+        f"README not found for {owner}/{repo}. The repository may be private, archived, "
+        f"or use a non-standard default branch. Check https://github.com/{owner}/{repo} manually."
+    )
