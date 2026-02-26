@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- version list -->
 
+## v0.3.0 (2026-02-26)
+
+### Features
+
+- Add error resilience with ERROR_CLASSIFICATION and RECOVERY_GUIDE patterns
+  ([#3](https://github.com/detailobsessed/spm-search/pull/3),
+  [`e603455`](https://github.com/detailobsessed/spm-search/commit/e603455776ab414cbfb0881199560247ce719d24))
+
+
 ## v0.2.0 (2026-02-26)
 
 ### Features
