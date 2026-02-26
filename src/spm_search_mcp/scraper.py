@@ -23,7 +23,7 @@ SPI_SEARCH_URL = f"{SPI_BASE_URL}/search"
 # LEARN: A realistic User-Agent avoids being blocked by simple bot filters.
 # Some sites reject the default 'python-httpx/...' UA string.
 HTTP_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; spm-search-mcp/0.1; +https://github.com/detailobsessed/spm-search-mcp)",
+    "User-Agent": "Mozilla/5.0 (compatible; spm-search-mcp/0.1; +https://github.com/detailobsessed/spm-search)",
     "Accept": "text/html",
 }
 

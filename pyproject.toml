@@ -19,12 +19,12 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://detailobsessed.github.io/spm-search-mcp"
-Documentation = "https://detailobsessed.github.io/spm-search-mcp"
-Changelog = "https://detailobsessed.github.io/spm-search-mcp/changelog"
-Repository = "https://github.com/detailobsessed/spm-search-mcp"
-Issues = "https://github.com/detailobsessed/spm-search-mcp/issues"
-Discussions = "https://github.com/detailobsessed/spm-search-mcp/discussions"
+Homepage = "https://detailobsessed.github.io/spm-search"
+Documentation = "https://detailobsessed.github.io/spm-search"
+Changelog = "https://detailobsessed.github.io/spm-search/changelog"
+Repository = "https://github.com/detailobsessed/spm-search"
+Issues = "https://github.com/detailobsessed/spm-search/issues"
+Discussions = "https://github.com/detailobsessed/spm-search/discussions"
 Funding = "https://github.com/sponsors/ichoosetoaccept"
 
 [project.scripts]
