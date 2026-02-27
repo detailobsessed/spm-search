@@ -49,9 +49,27 @@ class TestBuildQuery:
         result = build_query("charts", last_activity_after="2024-01-01")
         assert result == "charts last_activity:>=2024-01-01"
 
+    def test_last_activity_before(self):
+        result = build_query("charts", last_activity_before="2023-12-31")
+        assert result == "charts last_activity:<=2023-12-31"
+
+    def test_last_activity_date_window(self):
+        result = build_query(last_activity_after="2024-01-01", last_activity_before="2024-12-31")
+        assert "last_activity:>=2024-01-01" in result
+        assert "last_activity:<=2024-12-31" in result
+
     def test_last_commit_after(self):
         result = build_query(last_commit_after="2024-06-15")
         assert result == "last_commit:>=2024-06-15"
+
+    def test_last_commit_before(self):
+        result = build_query(last_commit_before="2023-12-31")
+        assert result == "last_commit:<=2023-12-31"
+
+    def test_last_commit_date_window(self):
+        result = build_query(last_commit_after="2024-01-01", last_commit_before="2024-12-31")
+        assert "last_commit:>=2024-01-01" in result
+        assert "last_commit:<=2024-12-31" in result
 
     def test_product_type_library(self):
         assert build_query(product_type=ProductType.LIBRARY) == "product:library"
@@ -69,6 +87,7 @@ class TestBuildQuery:
             platforms=[Platform.IOS, Platform.MACOS],
             license_filter="mit",
             last_activity_after="2024-01-01",
+            last_activity_before="2024-06-30",
             product_type=ProductType.LIBRARY,
         )
         parts = result.split()
@@ -79,6 +98,7 @@ class TestBuildQuery:
         assert "platform:ios,macos" in parts
         assert "license:mit" in parts
         assert "last_activity:>=2024-01-01" in parts
+        assert "last_activity:<=2024-06-30" in parts
         assert "product:library" in parts
 
     def test_visionos_platform(self):

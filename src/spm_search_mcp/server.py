@@ -44,7 +44,9 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
     platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
+    last_activity_before: str | None = None,
     last_commit_after: str | None = None,
+    last_commit_before: str | None = None,
     product_type: ProductType | None = None,
     page: int = 1,
 ) -> SearchResponse:
@@ -67,8 +69,12 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
             Prefix with "!" to exclude (e.g. "!gpl-3.0").
         last_activity_after: ISO8601 date (YYYY-MM-DD). Only packages with maintenance
             activity after this date. Example: "2024-01-01".
+        last_activity_before: ISO8601 date (YYYY-MM-DD). Only packages with maintenance
+            activity before this date. Combine with last_activity_after for a date window.
         last_commit_after: ISO8601 date (YYYY-MM-DD). Only packages with commits
             after this date.
+        last_commit_before: ISO8601 date (YYYY-MM-DD). Only packages with commits
+            before this date. Combine with last_commit_after for a date window.
         product_type: Filter by product type: library, executable, plugin, or macro.
         page: Page number for pagination (default 1). Check has_more in the response.
 
@@ -87,7 +93,9 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
         platforms=platforms,
         license_filter=license_filter,
         last_activity_after=last_activity_after,
+        last_activity_before=last_activity_before,
         last_commit_after=last_commit_after,
+        last_commit_before=last_commit_before,
         product_type=product_type,
         page=page,
     )
