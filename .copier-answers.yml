@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier.
-_commit: 0.31.1
+_commit: 0.31.2
 _src_path: gh:detailobsessed/copier-uv-bleeding
 author_email: ismart@gmail.com
 author_fullname: Ismar Iljazovic
@@ -12,6 +12,7 @@ project_description: MCP server to help your coding agent search the Swift packa
 project_name: spm-search-mcp
 project_type: app
 project_visibility: public
+publish_to_mcp_registry: false
 publish_to_pypi: false
 repository_host: github.com
 repository_namespace: detailobsessed
