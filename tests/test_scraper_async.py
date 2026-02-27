@@ -1,4 +1,4 @@
-"""Async tests for search_packages and fetch_readme with mocked httpx."""
+"""Async tests for search_packages and fetch_readme with mocked HTTP clients."""
 
 from __future__ import annotations
 
@@ -15,6 +15,14 @@ def _make_http_mock(status_code: int = 200, text: str = "") -> MagicMock:
     response.text = text
     response.raise_for_status = MagicMock()
     return response
+
+
+def _patch_curl_session(mock_client: AsyncMock):
+    """Return a patch context that wires mock_client as the CurlSession instance."""
+    mock_ctx = AsyncMock()
+    mock_ctx.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_ctx.__aexit__ = AsyncMock(return_value=False)
+    return patch("spm_search_mcp.scraper.CurlSession", return_value=mock_ctx)
 
 
 def _patch_client(mock_client: AsyncMock):
@@ -50,7 +58,7 @@ class TestSearchPackages:
         mock_client = AsyncMock()
         mock_client.get.return_value = _make_http_mock(200, html)
 
-        with _patch_client(mock_client):
+        with _patch_curl_session(mock_client):
             result = await search_packages(query="networking")
 
         assert result.result_count == 1
@@ -64,7 +72,7 @@ class TestSearchPackages:
         mock_client = AsyncMock()
         mock_client.get.return_value = _make_http_mock(200, html)
 
-        with _patch_client(mock_client):
+        with _patch_curl_session(mock_client):
             result = await search_packages(query="xyznotfound123")
 
         assert result.result_count == 0
@@ -87,7 +95,7 @@ class TestSearchPackages:
         mock_client = AsyncMock()
         mock_client.get.return_value = _make_http_mock(200, html)
 
-        with _patch_client(mock_client):
+        with _patch_curl_session(mock_client):
             result = await search_packages(query="swift", page=1)
 
         assert result.has_more is True
