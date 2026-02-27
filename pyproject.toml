@@ -13,6 +13,7 @@ requires-python = ">=3.14"
 version = "0.5.0"
 dependencies = [
     "beautifulsoup4>=4.14.3",
+    "curl-cffi>=0.14.0",
     "fastmcp>=3.0.2",
     "httpx>=0.28.1",
     "lxml>=6.0.2",

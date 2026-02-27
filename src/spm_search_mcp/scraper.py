@@ -12,6 +12,8 @@ from urllib.parse import quote_plus, urljoin
 
 import httpx
 from bs4 import BeautifulSoup, Tag
+from curl_cffi.requests import AsyncSession as CurlSession
+from curl_cffi.requests.errors import RequestsError as CurlRequestsError
 
 from spm_search_mcp.models import PackageResult, Platform, ProductType, SearchResponse
 
@@ -20,15 +22,15 @@ logger = logging.getLogger(__name__)
 SPI_BASE_URL = "https://swiftpackageindex.com"
 SPI_SEARCH_URL = f"{SPI_BASE_URL}/search"
 
-# LEARN: A realistic User-Agent avoids being blocked by simple bot filters.
-# Some sites reject the default 'python-httpx/...' UA string.
-HTTP_HEADERS = {
+# LEARN: curl_cffi impersonates Chrome's TLS fingerprint for SPI (Cloudflare-protected).
+# httpx is kept for GitHub raw content fetches which don't need TLS impersonation.
+GITHUB_HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; spm-search-mcp/0.1; +https://github.com/detailobsessed/spm-search)",
     "Accept": "text/html",
 }
 
 
-def build_query(  # noqa: PLR0912, PLR0913
+def build_query(  # noqa: PLR0913
     query: str = "",
     *,
     author: str | None = None,
@@ -36,14 +38,12 @@ def build_query(  # noqa: PLR0912, PLR0913
     min_stars: int | None = None,
     max_stars: int | None = None,
     platforms: list[Platform] | None = None,
-    exclude_platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
     last_activity_before: str | None = None,
     last_commit_after: str | None = None,
     last_commit_before: str | None = None,
     product_type: ProductType | None = None,
-    exclude_product_type: ProductType | None = None,
 ) -> str:
     """Assemble structured parameters into SPI's query filter syntax.
 
@@ -73,11 +73,6 @@ def build_query(  # noqa: PLR0912, PLR0913
         platform_str = ",".join(p.value for p in platforms)
         parts.append(f"platform:{platform_str}")
 
-    if exclude_platforms:
-        # LEARN: SPI exclusion requires each value individually prefixed: platform:!ios,!linux
-        excl_str = ",".join(f"!{p.value}" for p in exclude_platforms)
-        parts.append(f"platform:{excl_str}")
-
     if license_filter:
         parts.append(f"license:{license_filter}")
 
@@ -95,9 +90,6 @@ def build_query(  # noqa: PLR0912, PLR0913
 
     if product_type:
         parts.append(f"product:{product_type.value}")
-
-    if exclude_product_type:
-        parts.append(f"product:!{exclude_product_type.value}")
 
     return " ".join(parts)
 
@@ -302,14 +294,12 @@ async def search_packages(  # noqa: PLR0913
     min_stars: int | None = None,
     max_stars: int | None = None,
     platforms: list[Platform] | None = None,
-    exclude_platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
     last_activity_before: str | None = None,
     last_commit_after: str | None = None,
     last_commit_before: str | None = None,
     product_type: ProductType | None = None,
-    exclude_product_type: ProductType | None = None,
     page: int = 1,
 ) -> SearchResponse:
     """Execute a search against the Swift Package Index and return structured results."""
@@ -320,14 +310,12 @@ async def search_packages(  # noqa: PLR0913
         min_stars=min_stars,
         max_stars=max_stars,
         platforms=platforms,
-        exclude_platforms=exclude_platforms,
         license_filter=license_filter,
         last_activity_after=last_activity_after,
         last_activity_before=last_activity_before,
         last_commit_after=last_commit_after,
         last_commit_before=last_commit_before,
         product_type=product_type,
-        exclude_product_type=exclude_product_type,
     )
 
     if not query_string.strip():
@@ -343,33 +331,27 @@ async def search_packages(  # noqa: PLR0913
 
     search_url = _build_search_url(query_string, page)
 
-    # LEARN: ERROR_CLASSIFICATION pattern — we catch specific httpx exceptions and return
+    # LEARN: ERROR_CLASSIFICATION pattern — we catch specific exceptions and return
     # agent-friendly SearchResponse objects instead of letting raw tracebacks propagate.
     # This means the agent ALWAYS gets structured data back, even on failure.
+    # LEARN: curl_cffi impersonates Chrome's TLS fingerprint, bypassing Cloudflare bot detection.
     try:
-        async with httpx.AsyncClient(headers=HTTP_HEADERS, timeout=15.0, follow_redirects=True) as client:
+        async with CurlSession(impersonate="chrome", timeout=15) as client:
             response = await client.get(search_url)
-            response.raise_for_status()
-    except httpx.TimeoutException:
+    except CurlRequestsError:
         return _error_response(
             query_string,
             page,
             search_url,
-            next_step="RETRYABLE: Swift Package Index took too long to respond. Retry the same search — transient timeouts are common.",
+            next_step="RETRYABLE: Could not reach swiftpackageindex.com. Check connectivity or retry in 30 seconds.",
         )
-    except httpx.ConnectError:
+
+    if response.status_code >= 400:  # noqa: PLR2004
         return _error_response(
             query_string,
             page,
             search_url,
-            next_step="RETRYABLE: Could not connect to swiftpackageindex.com. The site may be temporarily down. Retry in 30 seconds.",
-        )
-    except httpx.HTTPStatusError as exc:
-        return _error_response(
-            query_string,
-            page,
-            search_url,
-            next_step=_classify_http_error(exc.response.status_code),
+            next_step=_classify_http_error(response.status_code),
         )
 
     html = response.text
@@ -417,7 +399,7 @@ async def fetch_readme(owner: str, repo: str, *, max_length: int = 4000) -> str:
     branches = ["main", "master"]
 
     try:
-        async with httpx.AsyncClient(headers=HTTP_HEADERS, timeout=15.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(headers=GITHUB_HEADERS, timeout=15.0, follow_redirects=True) as client:
             for branch in branches:
                 for filename in filenames:
                     url = f"https://raw.githubusercontent.com/{owner}/{repo}/{branch}/{filename}"

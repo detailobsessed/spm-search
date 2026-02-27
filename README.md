@@ -27,7 +27,7 @@ fastmcp install mcp-json src/spm_search_mcp/server.py:mcp --with-editable . -n "
 
 ## Manual MCP client configuration
 
-### Published package (once on PyPI)
+### Published package (PyPI)
 
 ```json
 {
@@ -68,18 +68,26 @@ Search for Swift packages by keyword, author, stars, platform, license, and more
 | Parameter | Type | Description |
 | --- | --- | --- |
 | `query` | `str` | Free-text search (e.g. `"networking"`, `"json parsing"`) |
-| `author` | `str` | Repository owner (e.g. `"apple"`, `"vapor"`) |
-| `keyword` | `str` | Package keyword tag (e.g. `"server"`, `"ui"`) |
+| `author` | `str` | Repository owner. Prefix with `!` to exclude (e.g. `"!vapor"`) |
+| `keyword` | `str` | Package keyword tag. Prefix with `!` to exclude (e.g. `"!deprecated"`) |
 | `min_stars` | `int` | Minimum GitHub star count |
 | `max_stars` | `int` | Maximum GitHub star count |
 | `platforms` | `list` | Compatible platforms: `ios`, `macos`, `watchos`, `tvos`, `visionos`, `linux` |
-| `license_filter` | `str` | `"compatible"` for App Store, or SPDX ID like `"mit"`, `"apache-2.0"` |
-| `last_activity_after` | `str` | ISO8601 date — only active packages (e.g. `"2024-01-01"`) |
-| `last_commit_after` | `str` | ISO8601 date — only recently committed packages |
+| `license_filter` | `str` | `"compatible"` for App Store, SPDX ID like `"mit"`, `"apache-2.0"`, or prefix `!` to exclude |
+| `last_activity_after` | `str` | ISO8601 date — only packages active after this date |
+| `last_activity_before` | `str` | ISO8601 date — only packages active before this date (combine with `after` for a window) |
+| `last_commit_after` | `str` | ISO8601 date — only packages with commits after this date |
+| `last_commit_before` | `str` | ISO8601 date — only packages with commits before this date |
 | `product_type` | `str` | `library`, `executable`, `plugin`, or `macro` |
 | `page` | `int` | Page number for pagination (default 1) |
 
 All parameters are optional. At least one must be provided. Parameters combine with AND logic.
+
+### `list_search_filters`
+
+Returns valid values for the `platforms` and `product_type` parameters. Call this first if unsure what values are accepted.
+
+_No parameters._ Returns a dict with `platforms` and `product_types` keys.
 
 ### `get_package_readme`
 
@@ -102,8 +110,23 @@ search_swift_packages(query="networking", min_stars=500)
 # Find iOS-compatible packages
 search_swift_packages(platforms=["ios"], min_stars=100)
 
+# Discover valid platform and product_type values
+list_search_filters()
+
 # Browse a specific author's packages
 search_swift_packages(author="apple")
+
+# Exclude an author
+search_swift_packages(query="networking", author="!vapor", min_stars=500)
+
+# Exclude deprecated packages
+search_swift_packages(query="json", keyword="!deprecated")
+
+# Packages active in a date window (first half of 2024)
+search_swift_packages(last_activity_after="2024-01-01", last_activity_before="2024-06-30", min_stars=100)
+
+# Find abandoned packages (no commits since 2022)
+search_swift_packages(last_commit_before="2022-01-01", min_stars=200)
 
 # Read a package's README
 get_package_readme(owner="Alamofire", repo="Alamofire")
@@ -125,7 +148,8 @@ Every error message tells the agent what happened, why, and how to fix it.
 
 This server implements these [arcade patterns](https://www.arcade.dev/patterns):
 
-- **QUERY_TOOL** — both tools are read-only, safe to retry
+- **QUERY_TOOL** — all tools are read-only, safe to retry
+- **DISCOVERY_TOOL** — `list_search_filters()` exposes valid enum values before searching
 - **CONSTRAINED_INPUT** — enums for platforms and product types
 - **SMART_DEFAULTS** — all parameters optional with sensible defaults
 - **NEXT_ACTION_HINT** — every response suggests what to do next

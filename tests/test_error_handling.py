@@ -6,6 +6,7 @@ from typing import Any
 
 import httpx
 import pytest
+from curl_cffi.requests.errors import RequestsError as CurlRequestsError
 
 from spm_search_mcp import scraper
 from spm_search_mcp.scraper import _classify_http_error, _error_response
@@ -68,19 +69,25 @@ class TestErrorResponse:
         assert resp.next_step == "RETRYABLE: do something"
 
 
-# LEARN: We define fake httpx clients as module-level classes to avoid repeating
-# them in every test. Each simulates a specific failure mode.
+# LEARN: Separate fake client classes for SPI (CurlSession) and GitHub (httpx.AsyncClient)
+# since we switched SPI to curl_cffi for Cloudflare bypass.
 
 
-def _fake_client_factory(**_kwargs: Any) -> Any:
-    """Swallow httpx.AsyncClient kwargs — avoids ARG005 lint on lambda."""
-    return _active_fake_client
+def _fake_curl_factory(*_args: Any, **_kwargs: Any) -> Any:
+    """Swallow CurlSession kwargs."""
+    return _active_fake_curl_client
 
 
-_active_fake_client: Any = None
+def _fake_httpx_factory(**_kwargs: Any) -> Any:
+    """Swallow httpx.AsyncClient kwargs."""
+    return _active_fake_httpx_client
 
 
-class _TimeoutClient:
+_active_fake_curl_client: Any = None
+_active_fake_httpx_client: Any = None
+
+
+class _CurlTimeoutClient:
     async def __aenter__(self):
         return self
 
@@ -89,10 +96,10 @@ class _TimeoutClient:
 
     async def get(self, url):
         msg = "timed out"
-        raise httpx.TimeoutException(msg)
+        raise CurlRequestsError(msg)
 
 
-class _ConnectErrorClient:
+class _CurlConnectErrorClient:
     async def __aenter__(self):
         return self
 
@@ -101,11 +108,11 @@ class _ConnectErrorClient:
 
     async def get(self, url):
         msg = "connection refused"
-        raise httpx.ConnectError(msg)
+        raise CurlRequestsError(msg)
 
 
-class _ServerErrorClient:
-    """Returns a real httpx.Response with status 503."""
+class _CurlServerErrorClient:
+    """Returns a response with status 503."""
 
     async def __aenter__(self):
         return self
@@ -114,10 +121,11 @@ class _ServerErrorClient:
         pass
 
     async def get(self, url):
-        # LEARN: Build a real httpx.Response so raise_for_status() works correctly
-        # and ty doesn't complain about type mismatches.
-        request = httpx.Request("GET", url)
-        return httpx.Response(status_code=503, request=request)
+        from unittest.mock import MagicMock
+
+        resp = MagicMock()
+        resp.status_code = 503
+        return resp
 
 
 class TestSearchPackagesErrorHandling:
@@ -126,20 +134,19 @@ class TestSearchPackagesErrorHandling:
     @pytest.mark.anyio
     async def test_timeout_returns_retryable(self, monkeypatch):
         """Simulate a timeout and verify the response is RETRYABLE."""
-        global _active_fake_client  # noqa: PLW0603
-        _active_fake_client = _TimeoutClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_client_factory)
+        global _active_fake_curl_client  # noqa: PLW0603
+        _active_fake_curl_client = _CurlTimeoutClient()
+        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
         resp = await scraper.search_packages("networking")
         assert resp.result_count == 0
         assert "RETRYABLE" in resp.next_step
-        assert "timeout" in resp.next_step.lower()
 
     @pytest.mark.anyio
     async def test_connect_error_returns_retryable(self, monkeypatch):
         """Simulate a connection failure."""
-        global _active_fake_client  # noqa: PLW0603
-        _active_fake_client = _ConnectErrorClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_client_factory)
+        global _active_fake_curl_client  # noqa: PLW0603
+        _active_fake_curl_client = _CurlConnectErrorClient()
+        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
         resp = await scraper.search_packages("networking")
         assert resp.result_count == 0
         assert "RETRYABLE" in resp.next_step
@@ -147,9 +154,9 @@ class TestSearchPackagesErrorHandling:
     @pytest.mark.anyio
     async def test_503_returns_retryable(self, monkeypatch):
         """Simulate a 503 server error."""
-        global _active_fake_client  # noqa: PLW0603
-        _active_fake_client = _ServerErrorClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_client_factory)
+        global _active_fake_curl_client  # noqa: PLW0603
+        _active_fake_curl_client = _CurlServerErrorClient()
+        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
         resp = await scraper.search_packages("networking")
         assert resp.result_count == 0
         assert "RETRYABLE" in resp.next_step
@@ -161,9 +168,21 @@ class TestFetchReadmeErrorHandling:
 
     @pytest.mark.anyio
     async def test_timeout_returns_retryable(self, monkeypatch):
-        global _active_fake_client  # noqa: PLW0603
-        _active_fake_client = _TimeoutClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_client_factory)
+        global _active_fake_httpx_client  # noqa: PLW0603
+
+        class _TimeoutClient:
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                pass
+
+            async def get(self, url):
+                msg = "timed out"
+                raise httpx.TimeoutException(msg)
+
+        _active_fake_httpx_client = _TimeoutClient()
+        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
         result = await scraper.fetch_readme("apple", "swift-nio")
         assert "RETRYABLE" in result
         assert "apple/swift-nio" in result

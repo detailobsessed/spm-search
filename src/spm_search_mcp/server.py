@@ -1,7 +1,8 @@
 """FastMCP server exposing Swift Package Index search tools.
 
 Applies arcade patterns throughout:
-- QUERY_TOOL: Both tools are read-only, safe to retry
+- QUERY_TOOL: All tools are read-only, safe to retry
+- DISCOVERY_TOOL: list_search_filters() exposes valid enum values
 - TOOL_DESCRIPTION: LLM-optimized docstrings with dependency/next-action hints
 - CONSTRAINED_INPUT: Enums for platforms and product types
 - SMART_DEFAULTS: Most params optional, sensible defaults
@@ -16,7 +17,7 @@ import logging
 
 from fastmcp import FastMCP
 
-from spm_search_mcp.models import Platform, ProductType, SearchResponse  # noqa: TC001 — FastMCP needs runtime types for schema generation
+from spm_search_mcp.models import Platform, ProductType, SearchResponse
 from spm_search_mcp.scraper import fetch_readme, search_packages
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,7 @@ mcp = FastMCP(
     name="Swift Package Index",
     instructions=(
         "Search the Swift Package Index (swiftpackageindex.com) for Swift packages. "
+        "Use list_search_filters() first to discover valid platform and product_type values. "
         "Use search_swift_packages to find packages by keyword, author, stars, platform, license, or product type. "
         "Use get_package_readme to fetch a package's README after finding it in search results. "
         "No API key required."
@@ -42,14 +44,12 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
     min_stars: int | None = None,
     max_stars: int | None = None,
     platforms: list[Platform] | None = None,
-    exclude_platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
     last_activity_before: str | None = None,
     last_commit_after: str | None = None,
     last_commit_before: str | None = None,
     product_type: ProductType | None = None,
-    exclude_product_type: ProductType | None = None,
     page: int = 1,
 ) -> SearchResponse:
     """Search the Swift Package Index for packages matching your criteria.
@@ -68,7 +68,6 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
         max_stars: Maximum GitHub star count.
         platforms: Filter by compatible platform(s). Multiple = AND (must support all).
             Valid: ios, macos, watchos, tvos, visionos, linux.
-        exclude_platforms: Exclude packages compatible with these platform(s).
         license_filter: License filter. Use "compatible" for App Store compatible,
             or a specific SPDX ID like "mit", "apache-2.0", "lgpl-2.1".
             Prefix with "!" to exclude (e.g. "!gpl-3.0").
@@ -81,11 +80,11 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
         last_commit_before: ISO8601 date (YYYY-MM-DD). Only packages with commits
             before this date. Combine with last_commit_after for a date window.
         product_type: Filter by product type: library, executable, plugin, or macro.
-        exclude_product_type: Exclude packages of this product type.
         page: Page number for pagination (default 1). Check has_more in the response.
 
-    After getting results, use get_package_readme(owner, repo) to read the README
-    of any package that looks interesting.
+    If you are unsure what values are valid for platforms or product_type, call
+    list_search_filters() first. After getting results, use get_package_readme(owner, repo)
+    to read the README of any package that looks interesting.
     """
     # LEARN: FastMCP automatically validates types from the function signature.
     # If an agent passes an invalid Platform string, FastMCP returns a typed error
@@ -97,16 +96,30 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
         min_stars=min_stars,
         max_stars=max_stars,
         platforms=platforms,
-        exclude_platforms=exclude_platforms,
         license_filter=license_filter,
         last_activity_after=last_activity_after,
         last_activity_before=last_activity_before,
         last_commit_after=last_commit_after,
         last_commit_before=last_commit_before,
         product_type=product_type,
-        exclude_product_type=exclude_product_type,
         page=page,
     )
+
+
+@mcp.tool
+def list_search_filters() -> dict[str, list[str]]:
+    """Return all valid values for the constrained parameters of search_swift_packages.
+
+    This is a DISCOVERY tool — call this first if you are unsure what values
+    are accepted for the platforms or product_type parameters.
+
+    Returns a dict with keys 'platforms' and 'product_types', each containing
+    the list of accepted string values.
+    """
+    return {
+        "platforms": [p.value for p in Platform],
+        "product_types": [p.value for p in ProductType],
+    }
 
 
 @mcp.tool
