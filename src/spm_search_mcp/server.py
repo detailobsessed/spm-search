@@ -42,12 +42,14 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
     min_stars: int | None = None,
     max_stars: int | None = None,
     platforms: list[Platform] | None = None,
+    exclude_platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
     last_activity_before: str | None = None,
     last_commit_after: str | None = None,
     last_commit_before: str | None = None,
     product_type: ProductType | None = None,
+    exclude_product_type: ProductType | None = None,
     page: int = 1,
 ) -> SearchResponse:
     """Search the Swift Package Index for packages matching your criteria.
@@ -59,11 +61,14 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
     Args:
         query: Free-text search (e.g. "networking", "json parsing").
         author: Filter by repository owner (e.g. "apple", "vapor").
+            Prefix with "!" to exclude (e.g. "!vapor").
         keyword: Filter by package keyword tag (e.g. "server", "ui").
+            Prefix with "!" to exclude (e.g. "!deprecated").
         min_stars: Minimum GitHub star count (e.g. 100, 1000).
         max_stars: Maximum GitHub star count.
         platforms: Filter by compatible platform(s). Multiple = AND (must support all).
             Valid: ios, macos, watchos, tvos, visionos, linux.
+        exclude_platforms: Exclude packages compatible with these platform(s).
         license_filter: License filter. Use "compatible" for App Store compatible,
             or a specific SPDX ID like "mit", "apache-2.0", "lgpl-2.1".
             Prefix with "!" to exclude (e.g. "!gpl-3.0").
@@ -76,6 +81,7 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
         last_commit_before: ISO8601 date (YYYY-MM-DD). Only packages with commits
             before this date. Combine with last_commit_after for a date window.
         product_type: Filter by product type: library, executable, plugin, or macro.
+        exclude_product_type: Exclude packages of this product type.
         page: Page number for pagination (default 1). Check has_more in the response.
 
     After getting results, use get_package_readme(owner, repo) to read the README
@@ -91,12 +97,14 @@ async def search_swift_packages(  # noqa: PLR0913, PLR0917
         min_stars=min_stars,
         max_stars=max_stars,
         platforms=platforms,
+        exclude_platforms=exclude_platforms,
         license_filter=license_filter,
         last_activity_after=last_activity_after,
         last_activity_before=last_activity_before,
         last_commit_after=last_commit_after,
         last_commit_before=last_commit_before,
         product_type=product_type,
+        exclude_product_type=exclude_product_type,
         page=page,
     )
 

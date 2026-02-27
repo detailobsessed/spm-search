@@ -108,3 +108,28 @@ class TestBuildQuery:
     def test_macro_product_type(self):
         result = build_query(product_type=ProductType.MACRO)
         assert result == "product:macro"
+
+    def test_exclude_single_platform(self):
+        result = build_query("networking", exclude_platforms=[Platform.LINUX])
+        assert result == "networking platform:!linux"
+
+    def test_exclude_multiple_platforms(self):
+        result = build_query(exclude_platforms=[Platform.IOS, Platform.LINUX])
+        assert result == "platform:!ios,!linux"
+
+    def test_exclude_product_type(self):
+        result = build_query("package", exclude_product_type=ProductType.LIBRARY)
+        assert result == "package product:!library"
+
+    def test_author_exclusion_prefix(self):
+        result = build_query("fluent", author="!vapor")
+        assert result == "fluent author:!vapor"
+
+    def test_keyword_exclusion_prefix(self):
+        result = build_query(keyword="!deprecated")
+        assert result == "keyword:!deprecated"
+
+    def test_include_and_exclude_platforms(self):
+        result = build_query(platforms=[Platform.IOS], exclude_platforms=[Platform.LINUX])
+        assert "platform:ios" in result
+        assert "platform:!linux" in result

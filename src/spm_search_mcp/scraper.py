@@ -28,7 +28,7 @@ HTTP_HEADERS = {
 }
 
 
-def build_query(  # noqa: PLR0913
+def build_query(  # noqa: PLR0912, PLR0913
     query: str = "",
     *,
     author: str | None = None,
@@ -36,12 +36,14 @@ def build_query(  # noqa: PLR0913
     min_stars: int | None = None,
     max_stars: int | None = None,
     platforms: list[Platform] | None = None,
+    exclude_platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
     last_activity_before: str | None = None,
     last_commit_after: str | None = None,
     last_commit_before: str | None = None,
     product_type: ProductType | None = None,
+    exclude_product_type: ProductType | None = None,
 ) -> str:
     """Assemble structured parameters into SPI's query filter syntax.
 
@@ -71,6 +73,11 @@ def build_query(  # noqa: PLR0913
         platform_str = ",".join(p.value for p in platforms)
         parts.append(f"platform:{platform_str}")
 
+    if exclude_platforms:
+        # LEARN: SPI exclusion requires each value individually prefixed: platform:!ios,!linux
+        excl_str = ",".join(f"!{p.value}" for p in exclude_platforms)
+        parts.append(f"platform:{excl_str}")
+
     if license_filter:
         parts.append(f"license:{license_filter}")
 
@@ -88,6 +95,9 @@ def build_query(  # noqa: PLR0913
 
     if product_type:
         parts.append(f"product:{product_type.value}")
+
+    if exclude_product_type:
+        parts.append(f"product:!{exclude_product_type.value}")
 
     return " ".join(parts)
 
@@ -292,12 +302,14 @@ async def search_packages(  # noqa: PLR0913
     min_stars: int | None = None,
     max_stars: int | None = None,
     platforms: list[Platform] | None = None,
+    exclude_platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
     last_activity_before: str | None = None,
     last_commit_after: str | None = None,
     last_commit_before: str | None = None,
     product_type: ProductType | None = None,
+    exclude_product_type: ProductType | None = None,
     page: int = 1,
 ) -> SearchResponse:
     """Execute a search against the Swift Package Index and return structured results."""
@@ -308,12 +320,14 @@ async def search_packages(  # noqa: PLR0913
         min_stars=min_stars,
         max_stars=max_stars,
         platforms=platforms,
+        exclude_platforms=exclude_platforms,
         license_filter=license_filter,
         last_activity_after=last_activity_after,
         last_activity_before=last_activity_before,
         last_commit_after=last_commit_after,
         last_commit_before=last_commit_before,
         product_type=product_type,
+        exclude_product_type=exclude_product_type,
     )
 
     if not query_string.strip():
