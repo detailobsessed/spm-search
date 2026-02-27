@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- version list -->
 
+## v0.6.0 (2026-02-27)
+
+### Chores
+
+- Update template to v0.31.3 ([#14](https://github.com/detailobsessed/spm-search-mcp/pull/14),
+  [`27c7dd1`](https://github.com/detailobsessed/spm-search-mcp/commit/27c7dd1a94fafcfa058c977fca90e9168fffba15))
+
+### Features
+
+- Add list_search_filters discovery tool
+  ([#15](https://github.com/detailobsessed/spm-search-mcp/pull/15),
+  [`6194804`](https://github.com/detailobsessed/spm-search-mcp/commit/61948045dc880750c91d40d8a7c7028535bdca2b))
+
+
 ## v0.5.0 (2026-02-27)
 
 ### Features
