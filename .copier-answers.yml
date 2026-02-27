@@ -1,10 +1,9 @@
 # Changes here will be overwritten by Copier.
-_commit: 0.31.3
+_commit: 0.31.4
 _src_path: gh:detailobsessed/copier-uv-bleeding
 author_email: ismart@gmail.com
 author_fullname: Ismar Iljazovic
 author_username: ichoosetoaccept
-cli_framework: none
 copyright_license: MIT
 custom_pypi_index_url: ''
 project_description: MCP server to help your coding agent search the Swift package
