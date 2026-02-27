@@ -38,7 +38,9 @@ def build_query(  # noqa: PLR0913
     platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
+    last_activity_before: str | None = None,
     last_commit_after: str | None = None,
+    last_commit_before: str | None = None,
     product_type: ProductType | None = None,
 ) -> str:
     """Assemble structured parameters into SPI's query filter syntax.
@@ -75,8 +77,14 @@ def build_query(  # noqa: PLR0913
     if last_activity_after:
         parts.append(f"last_activity:>={last_activity_after}")
 
+    if last_activity_before:
+        parts.append(f"last_activity:<={last_activity_before}")
+
     if last_commit_after:
         parts.append(f"last_commit:>={last_commit_after}")
+
+    if last_commit_before:
+        parts.append(f"last_commit:<={last_commit_before}")
 
     if product_type:
         parts.append(f"product:{product_type.value}")
@@ -286,7 +294,9 @@ async def search_packages(  # noqa: PLR0913
     platforms: list[Platform] | None = None,
     license_filter: str | None = None,
     last_activity_after: str | None = None,
+    last_activity_before: str | None = None,
     last_commit_after: str | None = None,
+    last_commit_before: str | None = None,
     product_type: ProductType | None = None,
     page: int = 1,
 ) -> SearchResponse:
@@ -300,7 +310,9 @@ async def search_packages(  # noqa: PLR0913
         platforms=platforms,
         license_filter=license_filter,
         last_activity_after=last_activity_after,
+        last_activity_before=last_activity_before,
         last_commit_after=last_commit_after,
+        last_commit_before=last_commit_before,
         product_type=product_type,
     )
 
