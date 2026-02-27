@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- version list -->
 
+## v0.5.0 (2026-02-27)
+
+### Features
+
+- Add exclusion filter support for platforms and product_type
+  ([#13](https://github.com/detailobsessed/spm-search/pull/13),
+  [`ff7ac54`](https://github.com/detailobsessed/spm-search/commit/ff7ac54362f1ed57d4d5855195ef41259eb46496))
+
+
 ## v0.4.0 (2026-02-27)
 
 ### Chores
