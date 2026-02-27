@@ -25,7 +25,7 @@ SPI_SEARCH_URL = f"{SPI_BASE_URL}/search"
 # LEARN: curl_cffi impersonates Chrome's TLS fingerprint for SPI (Cloudflare-protected).
 # httpx is kept for GitHub raw content fetches which don't need TLS impersonation.
 GITHUB_HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; spm-search-mcp/0.1; +https://github.com/detailobsessed/spm-search)",
+    "User-Agent": "Mozilla/5.0 (compatible; spm-search-mcp/0.1; +https://github.com/detailobsessed/spm-search-mcp)",
     "Accept": "text/html",
 }
 

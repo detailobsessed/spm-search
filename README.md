@@ -1,7 +1,10 @@
 # spm-search-mcp
 
-[![ci](https://github.com/detailobsessed/spm-search/workflows/ci/badge.svg)](https://github.com/detailobsessed/spm-search/actions?query=workflow%3Aci)
+[![ci](https://github.com/detailobsessed/spm-search-mcp/workflows/ci/badge.svg)](https://github.com/detailobsessed/spm-search-mcp/actions?query=workflow%3Aci)
+[![codecov](https://codecov.io/gh/detailobsessed/spm-search-mcp/graph/badge.svg)](https://codecov.io/gh/detailobsessed/spm-search-mcp)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
+[![FastMCP](https://img.shields.io/badge/docs-gofastmcp.com-orange)](https://gofastmcp.com)
+[![MCP](https://img.shields.io/badge/MCP-protocol-5B5BD6)](https://modelcontextprotocol.io)
 
 An [MCP](https://modelcontextprotocol.io) server that lets coding agents search the [Swift Package Index](https://swiftpackageindex.com). No API key required.
 
@@ -27,35 +30,34 @@ fastmcp install mcp-json src/spm_search_mcp/server.py:mcp --with-editable . -n "
 
 ## Manual MCP client configuration
 
-### Published package (PyPI)
+### Via GitHub (no install needed)
 
-```json
-{
-  "mcpServers": {
-    "spm-search": {
-      "command": "uvx",
-      "args": ["spm-search-mcp"]
-    }
-  }
+```jsonc
+// add to your mcpServers:
+"spm-search-mcp": {
+  "command": "uvx",
+  "args": [
+    "--from", "git+https://github.com/detailobsessed/spm-search-mcp",
+    "spm-search-mcp"
+  ]
 }
 ```
 
+Requires [uv](https://docs.astral.sh/uv/) (`brew install uv` on macOS).
+
 ### From source (development)
 
-```json
-{
-  "mcpServers": {
-    "spm-search": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with", "fastmcp",
-        "--with-editable", "/path/to/spm-search",
-        "fastmcp", "run",
-        "/path/to/spm-search/src/spm_search_mcp/server.py:mcp"
-      ]
-    }
-  }
+```jsonc
+// add to your mcpServers:
+"spm-search-mcp": {
+  "command": "uv",
+  "args": [
+    "run",
+    "--with", "fastmcp",
+    "--with-editable", "/path/to/spm-search-mcp",
+    "fastmcp", "run",
+    "/path/to/spm-search-mcp/src/spm_search_mcp/server.py:mcp"
+  ]
 }
 ```
 

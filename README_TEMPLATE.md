@@ -8,11 +8,11 @@ and kept up to date on every `copier update`. Your project README lives in `READ
 Copy these into your `README.md` to show project status:
 
 ```markdown
-[![ci](https://github.com/detailobsessed/spm-search/workflows/ci/badge.svg)](https://github.com/detailobsessed/spm-search/actions?query=workflow%3Aci)
-[![release](https://github.com/detailobsessed/spm-search/workflows/release/badge.svg)](https://github.com/detailobsessed/spm-search/actions?query=workflow%3Arelease)
-[![documentation](https://img.shields.io/badge/docs-zensical-708FCC.svg?style=flat)](https://detailobsessed.github.io/spm-search/)
+[![ci](https://github.com/detailobsessed/spm-search-mcp/workflows/ci/badge.svg)](https://github.com/detailobsessed/spm-search-mcp/actions?query=workflow%3Aci)
+[![release](https://github.com/detailobsessed/spm-search-mcp/workflows/release/badge.svg)](https://github.com/detailobsessed/spm-search-mcp/actions?query=workflow%3Arelease)
+[![documentation](https://img.shields.io/badge/docs-zensical-708FCC.svg?style=flat)](https://detailobsessed.github.io/spm-search-mcp/)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
-[![codecov](https://codecov.io/gh/detailobsessed/spm-search/branch/main/graph/badge.svg)](https://codecov.io/gh/detailobsessed/spm-search)
+[![codecov](https://codecov.io/gh/detailobsessed/spm-search-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/detailobsessed/spm-search-mcp)
 ```
 
 ## Installation
