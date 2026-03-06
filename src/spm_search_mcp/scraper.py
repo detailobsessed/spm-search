@@ -334,7 +334,7 @@ async def search_packages(  # noqa: PLR0913
     try:
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             response = await client.get(search_url)
-    except httpx.ConnectError:
+    except httpx.NetworkError:
         return _error_response(
             query_string,
             page,
@@ -413,7 +413,7 @@ async def fetch_readme(owner: str, repo: str, *, max_length: int = 4000) -> str:
                         return f"RETRYABLE: GitHub rate limited the request for {owner}/{repo}. Wait 60 seconds, then retry."
     except httpx.TimeoutException:
         return f"RETRYABLE: GitHub took too long to respond for {owner}/{repo}. Retry the same request."
-    except httpx.ConnectError:
+    except httpx.NetworkError:
         return f"RETRYABLE: Could not connect to GitHub for {owner}/{repo}. Retry in 30 seconds."
 
     return (
