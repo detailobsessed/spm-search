@@ -64,13 +64,7 @@ class TestListSearchFilters:
 # LEARN: We reuse the fake client pattern from test_error_handling to test the
 # server tools end-to-end without hitting the network.
 
-_active_fake_curl_client: Any = None
 _active_fake_httpx_client: Any = None
-
-
-def _fake_curl_factory(*_args: Any, **_kwargs: Any) -> Any:
-    """Swallow CurlSession kwargs."""
-    return _active_fake_curl_client
 
 
 def _fake_httpx_factory(**_kwargs: Any) -> Any:
@@ -79,7 +73,7 @@ def _fake_httpx_factory(**_kwargs: Any) -> Any:
 
 
 class _OkSearchClient:
-    """Returns a minimal valid SPI search page (used with CurlSession mock)."""
+    """Returns a minimal valid SPI search page."""
 
     async def __aenter__(self):
         return self
@@ -131,9 +125,9 @@ class TestSearchToolIntegration:
 
     @pytest.mark.anyio
     async def test_search_returns_results(self, monkeypatch):
-        global _active_fake_curl_client  # noqa: PLW0603
-        _active_fake_curl_client = _OkSearchClient()
-        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
+        global _active_fake_httpx_client  # noqa: PLW0603
+        _active_fake_httpx_client = _OkSearchClient()
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         resp = await search_swift_packages(query="test")
         assert resp.result_count > 0
         assert resp.results[0].name == "TestPkg"
@@ -147,7 +141,7 @@ class TestReadmeToolIntegration:
     async def test_readme_found(self, monkeypatch):
         global _active_fake_httpx_client  # noqa: PLW0603
         _active_fake_httpx_client = _OkReadmeClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         # Calls through server.py lines 123-124
         result = await get_package_readme(owner="test", repo="pkg")
         assert "# Hello" in result
@@ -157,7 +151,7 @@ class TestReadmeToolIntegration:
         """max_length=0 should pass 999_999 to fetch_readme (PROGRESSIVE_DETAIL)."""
         global _active_fake_httpx_client  # noqa: PLW0603
         _active_fake_httpx_client = _OkReadmeClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         # This exercises the max_length=0 branch on server.py line 123
         result = await get_package_readme(owner="test", repo="pkg", max_length=0)
         assert "# Hello" in result
@@ -179,7 +173,7 @@ class TestReadmeToolIntegration:
 
         global _active_fake_httpx_client  # noqa: PLW0603
         _active_fake_httpx_client = _NotFoundClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         result = await get_package_readme(owner="nonexist", repo="repo")
         assert "not found" in result.lower()
         assert "nonexist/repo" in result
@@ -203,7 +197,7 @@ class TestReadmeToolIntegration:
 
         global _active_fake_httpx_client  # noqa: PLW0603
         _active_fake_httpx_client = _LongReadmeClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         result = await get_package_readme(owner="test", repo="pkg", max_length=100)
         assert "truncated" in result
         assert "10000" in result
@@ -225,7 +219,7 @@ class TestReadmeToolIntegration:
 
         global _active_fake_httpx_client  # noqa: PLW0603
         _active_fake_httpx_client = _RateLimitClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         result = await get_package_readme(owner="test", repo="pkg")
         assert "RETRYABLE" in result
 
@@ -246,6 +240,6 @@ class TestReadmeToolIntegration:
 
         global _active_fake_httpx_client  # noqa: PLW0603
         _active_fake_httpx_client = _ConnectErrorClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         result = await get_package_readme(owner="test", repo="pkg")
         assert "RETRYABLE" in result

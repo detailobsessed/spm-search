@@ -10,6 +10,8 @@ An [MCP](https://modelcontextprotocol.io) server that lets coding agents search 
 
 Built with [FastMCP](https://gofastmcp.com) and designed using [arcade patterns](https://www.arcade.dev/patterns) for optimal agent comprehension.
 
+> **Note (March 2026):** This project is currently on hold. It was built as a proof-of-concept for agentic SPI search, but the underlying scraping approach conflicts with Swift Package Index's infrastructure protection. See [SwiftPackageIndex/SwiftPackageIndex-Server#3970](https://github.com/SwiftPackageIndex/SwiftPackageIndex-Server/issues/3970) for context. The project will resume if/when an official API becomes available.
+
 ## Quick install
 
 From the repo root, run the command for your MCP client:
