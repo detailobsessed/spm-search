@@ -12,7 +12,7 @@ Copy these into your `README.md` to show project status:
 [![release](https://github.com/detailobsessed/spm-search-mcp/workflows/release/badge.svg)](https://github.com/detailobsessed/spm-search-mcp/actions?query=workflow%3Arelease)
 [![documentation](https://img.shields.io/badge/docs-zensical-708FCC.svg?style=flat)](https://detailobsessed.github.io/spm-search-mcp/)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
-[![codecov](https://codecov.io/gh/detailobsessed/spm-search-mcp/branch/main/graph/badge.svg)](https://codecov.io/gh/detailobsessed/spm-search-mcp)
+[![codecov](https://codecov.io/github/detailobsessed/spm-search-mcp/graph/badge.svg?token=0MZIQZBYA7)](https://codecov.io/github/detailobsessed/spm-search-mcp)
 ```
 
 ## Installation

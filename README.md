@@ -1,7 +1,7 @@
 # spm-search-mcp
 
 [![ci](https://github.com/detailobsessed/spm-search-mcp/workflows/ci/badge.svg)](https://github.com/detailobsessed/spm-search-mcp/actions?query=workflow%3Aci)
-[![codecov](https://codecov.io/gh/detailobsessed/spm-search-mcp/graph/badge.svg)](https://codecov.io/gh/detailobsessed/spm-search-mcp)
+[![codecov](https://codecov.io/github/detailobsessed/spm-search-mcp/graph/badge.svg?token=0MZIQZBYA7)](https://codecov.io/github/detailobsessed/spm-search-mcp)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![FastMCP](https://img.shields.io/badge/docs-gofastmcp.com-orange)](https://gofastmcp.com)
 [![MCP](https://img.shields.io/badge/MCP-protocol-5B5BD6)](https://modelcontextprotocol.io)
@@ -10,7 +10,7 @@ An [MCP](https://modelcontextprotocol.io) server that lets coding agents search 
 
 Built with [FastMCP](https://gofastmcp.com) and designed using [arcade patterns](https://www.arcade.dev/patterns) for optimal agent comprehension.
 
-> **Note (March 2026):** This project is currently on hold. It was built as a proof-of-concept for agentic SPI search, but the underlying scraping approach conflicts with Swift Package Index's infrastructure protection. See [SwiftPackageIndex/SwiftPackageIndex-Server#3970](https://github.com/SwiftPackageIndex/SwiftPackageIndex-Server/issues/3970) for context. The project will resume if/when an official API becomes available.
+> **Note (March 2026):** This project is currently on hold. It was built as a proof-of-concept for agentic SPI search using HTML scraping and a Cloudflare bypass (`curl_cffi`). The bypass has since been removed — the project now uses plain `httpx` and no longer attempts to circumvent bot protection, which means it is effectively non-functional. See [SwiftPackageIndex/SwiftPackageIndex-Server#3970](https://github.com/SwiftPackageIndex/SwiftPackageIndex-Server/issues/3970) for context. The project will resume if/when an official API becomes available.
 
 ## Quick install
 
