@@ -7,7 +7,6 @@ from typing import Any
 import httpx
 import pytest
 
-from spm_search_mcp import scraper
 from spm_search_mcp.server import get_package_readme, list_search_filters, mcp, search_swift_packages
 
 
@@ -64,13 +63,7 @@ class TestListSearchFilters:
 # LEARN: We reuse the fake client pattern from test_error_handling to test the
 # server tools end-to-end without hitting the network.
 
-_active_fake_curl_client: Any = None
 _active_fake_httpx_client: Any = None
-
-
-def _fake_curl_factory(*_args: Any, **_kwargs: Any) -> Any:
-    """Swallow CurlSession kwargs."""
-    return _active_fake_curl_client
 
 
 def _fake_httpx_factory(**_kwargs: Any) -> Any:
@@ -79,7 +72,7 @@ def _fake_httpx_factory(**_kwargs: Any) -> Any:
 
 
 class _OkSearchClient:
-    """Returns a minimal valid SPI search page (used with CurlSession mock)."""
+    """Returns a minimal valid SPI search page."""
 
     async def __aenter__(self):
         return self
@@ -131,9 +124,9 @@ class TestSearchToolIntegration:
 
     @pytest.mark.anyio
     async def test_search_returns_results(self, monkeypatch):
-        global _active_fake_curl_client  # noqa: PLW0603
-        _active_fake_curl_client = _OkSearchClient()
-        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
+        global _active_fake_httpx_client  # noqa: PLW0603
+        _active_fake_httpx_client = _OkSearchClient()
+        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
         resp = await search_swift_packages(query="test")
         assert resp.result_count > 0
         assert resp.results[0].name == "TestPkg"

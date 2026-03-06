@@ -6,7 +6,6 @@ from typing import Any
 
 import httpx
 import pytest
-from curl_cffi.requests.errors import RequestsError as CurlRequestsError
 
 from spm_search_mcp import scraper
 from spm_search_mcp.scraper import _classify_http_error, _error_response
@@ -69,13 +68,7 @@ class TestErrorResponse:
         assert resp.next_step == "RETRYABLE: do something"
 
 
-# LEARN: Separate fake client classes for SPI (CurlSession) and GitHub (httpx.AsyncClient)
-# since we switched SPI to curl_cffi for Cloudflare bypass.
-
-
-def _fake_curl_factory(*_args: Any, **_kwargs: Any) -> Any:
-    """Swallow CurlSession kwargs."""
-    return _active_fake_curl_client
+# LEARN: Both search and README fetching use httpx.AsyncClient, so tests share one factory.
 
 
 def _fake_httpx_factory(**_kwargs: Any) -> Any:
@@ -83,11 +76,10 @@ def _fake_httpx_factory(**_kwargs: Any) -> Any:
     return _active_fake_httpx_client
 
 
-_active_fake_curl_client: Any = None
 _active_fake_httpx_client: Any = None
 
 
-class _CurlTimeoutClient:
+class _HttpxTimeoutClient:
     async def __aenter__(self):
         return self
 
@@ -96,10 +88,10 @@ class _CurlTimeoutClient:
 
     async def get(self, url):
         msg = "timed out"
-        raise CurlRequestsError(msg)
+        raise httpx.TimeoutException(msg)
 
 
-class _CurlConnectErrorClient:
+class _HttpxConnectErrorClient:
     async def __aenter__(self):
         return self
 
@@ -108,10 +100,10 @@ class _CurlConnectErrorClient:
 
     async def get(self, url):
         msg = "connection refused"
-        raise CurlRequestsError(msg)
+        raise httpx.ConnectError(msg)
 
 
-class _CurlServerErrorClient:
+class _HttpxServerErrorClient:
     """Returns a response with status 503."""
 
     async def __aenter__(self):
@@ -134,9 +126,9 @@ class TestSearchPackagesErrorHandling:
     @pytest.mark.anyio
     async def test_timeout_returns_retryable(self, monkeypatch):
         """Simulate a timeout and verify the response is RETRYABLE."""
-        global _active_fake_curl_client  # noqa: PLW0603
-        _active_fake_curl_client = _CurlTimeoutClient()
-        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
+        global _active_fake_httpx_client  # noqa: PLW0603
+        _active_fake_httpx_client = _HttpxTimeoutClient()
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         resp = await scraper.search_packages("networking")
         assert resp.result_count == 0
         assert "RETRYABLE" in resp.next_step
@@ -144,9 +136,9 @@ class TestSearchPackagesErrorHandling:
     @pytest.mark.anyio
     async def test_connect_error_returns_retryable(self, monkeypatch):
         """Simulate a connection failure."""
-        global _active_fake_curl_client  # noqa: PLW0603
-        _active_fake_curl_client = _CurlConnectErrorClient()
-        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
+        global _active_fake_httpx_client  # noqa: PLW0603
+        _active_fake_httpx_client = _HttpxConnectErrorClient()
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         resp = await scraper.search_packages("networking")
         assert resp.result_count == 0
         assert "RETRYABLE" in resp.next_step
@@ -154,9 +146,9 @@ class TestSearchPackagesErrorHandling:
     @pytest.mark.anyio
     async def test_503_returns_retryable(self, monkeypatch):
         """Simulate a 503 server error."""
-        global _active_fake_curl_client  # noqa: PLW0603
-        _active_fake_curl_client = _CurlServerErrorClient()
-        monkeypatch.setattr(scraper, "CurlSession", _fake_curl_factory)
+        global _active_fake_httpx_client  # noqa: PLW0603
+        _active_fake_httpx_client = _HttpxServerErrorClient()
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         resp = await scraper.search_packages("networking")
         assert resp.result_count == 0
         assert "RETRYABLE" in resp.next_step
@@ -182,7 +174,7 @@ class TestFetchReadmeErrorHandling:
                 raise httpx.TimeoutException(msg)
 
         _active_fake_httpx_client = _TimeoutClient()
-        monkeypatch.setattr(httpx, "AsyncClient", _fake_httpx_factory)
+        monkeypatch.setattr(scraper.httpx, "AsyncClient", _fake_httpx_factory)
         result = await scraper.fetch_readme("apple", "swift-nio")
         assert "RETRYABLE" in result
         assert "apple/swift-nio" in result

@@ -12,8 +12,6 @@ from urllib.parse import quote_plus, urljoin
 
 import httpx
 from bs4 import BeautifulSoup, Tag
-from curl_cffi.requests import AsyncSession as CurlSession
-from curl_cffi.requests.errors import RequestsError as CurlRequestsError
 
 from spm_search_mcp.models import PackageResult, Platform, ProductType, SearchResponse
 
@@ -22,8 +20,7 @@ logger = logging.getLogger(__name__)
 SPI_BASE_URL = "https://swiftpackageindex.com"
 SPI_SEARCH_URL = f"{SPI_BASE_URL}/search"
 
-# LEARN: curl_cffi impersonates Chrome's TLS fingerprint for SPI (Cloudflare-protected).
-# httpx is kept for GitHub raw content fetches which don't need TLS impersonation.
+# LEARN: httpx is used for all network calls — both search and README fetching.
 GITHUB_HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; spm-search-mcp/0.1; +https://github.com/detailobsessed/spm-search-mcp)",
     "Accept": "text/html",
@@ -334,16 +331,22 @@ async def search_packages(  # noqa: PLR0913
     # LEARN: ERROR_CLASSIFICATION pattern — we catch specific exceptions and return
     # agent-friendly SearchResponse objects instead of letting raw tracebacks propagate.
     # This means the agent ALWAYS gets structured data back, even on failure.
-    # LEARN: curl_cffi impersonates Chrome's TLS fingerprint, bypassing Cloudflare bot detection.
     try:
-        async with CurlSession(impersonate="chrome", timeout=15) as client:
+        async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             response = await client.get(search_url)
-    except CurlRequestsError:
+    except httpx.ConnectError:
         return _error_response(
             query_string,
             page,
             search_url,
             next_step="RETRYABLE: Could not reach swiftpackageindex.com. Check connectivity or retry in 30 seconds.",
+        )
+    except httpx.TimeoutException:
+        return _error_response(
+            query_string,
+            page,
+            search_url,
+            next_step="RETRYABLE: Request to swiftpackageindex.com timed out. Retry in 30 seconds.",
         )
 
     if response.status_code >= 400:  # noqa: PLR2004
