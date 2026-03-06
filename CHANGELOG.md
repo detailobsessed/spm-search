@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 <!-- version list -->
 
+## v0.6.1 (2026-03-06)
+
+### Bug Fixes
+
+- Add shellcheck shell directive to .envrc
+  ([`3619eea`](https://github.com/detailobsessed/spm-search-mcp/commit/3619eeacbcc87a8a86ffd5e3510e8ed7f6bd9876))
+
+- Broaden exception handling from ConnectError to NetworkError
+  ([`f545f9c`](https://github.com/detailobsessed/spm-search-mcp/commit/f545f9cbcd0ad06a97dbba8a9b5844fd0ea76c49))
+
+- Broaden exception handling from NetworkError to TransportError
+  ([`523a394`](https://github.com/detailobsessed/spm-search-mcp/commit/523a394576eeb4c8ddff0267104de263b0405033))
+
+- Patch scraper.httpx in test_server.py (consistent with test_error_handling.py)
+  ([`8b16e37`](https://github.com/detailobsessed/spm-search-mcp/commit/8b16e373ebfcfb9551efd0fac9cab08534bfa42a))
+
+- Remove curl_cffi, swap to httpx, put project on hold
+  ([`9a1bbbb`](https://github.com/detailobsessed/spm-search-mcp/commit/9a1bbbb0c41a832a9ea665bac25e83688268611a))
+
+- Split SC2155 export in .envrc
+  ([`64cfea6`](https://github.com/detailobsessed/spm-search-mcp/commit/64cfea6d97f93c23038d639eb69d4ae861d3180c))
+
+### Chores
+
+- Bump all dependencies (uv sync --upgrade)
+  ([`4553742`](https://github.com/detailobsessed/spm-search-mcp/commit/4553742b0b03ce9a1095e51fadf59640a90a2677))
+
+- Rename repo to spm-search-mcp, add badges, fix install instructions
+  ([#16](https://github.com/detailobsessed/spm-search-mcp/pull/16),
+  [`4c1fde9`](https://github.com/detailobsessed/spm-search-mcp/commit/4c1fde9a43e0311a96c8077953dd6c4ef28480d8))
+
+
 ## v0.6.0 (2026-02-27)
 
 ### Chores
