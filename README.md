@@ -1,7 +1,7 @@
 # spm-search-mcp
 
 [![ci](https://github.com/detailobsessed/spm-search-mcp/workflows/ci/badge.svg)](https://github.com/detailobsessed/spm-search-mcp/actions?query=workflow%3Aci)
-[![codecov](https://codecov.io/gh/detailobsessed/spm-search-mcp/graph/badge.svg)](https://codecov.io/gh/detailobsessed/spm-search-mcp)
+[![codecov](https://codecov.io/github/detailobsessed/spm-search-mcp/graph/badge.svg?token=0MZIQZBYA7)](https://codecov.io/github/detailobsessed/spm-search-mcp)
 [![Python 3.14+](https://img.shields.io/badge/python-3.14+-blue.svg)](https://www.python.org/downloads/)
 [![FastMCP](https://img.shields.io/badge/docs-gofastmcp.com-orange)](https://gofastmcp.com)
 [![MCP](https://img.shields.io/badge/MCP-protocol-5B5BD6)](https://modelcontextprotocol.io)
